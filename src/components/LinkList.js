@@ -1,8 +1,8 @@
 import React, { Fragment } from 'react'
 import Link from './Link'
-import { Query } from 'react-apollo'
 import gql from 'graphql-tag'
 import { LINKS_PER_PAGE } from '../constants';
+import { useQuery } from '@apollo/react-hooks';
 
 export const FEED_QUERY = gql`
   query FeedQuery($first: Int, $skip: Int, $orderBy: LinkOrderByInput) {
@@ -154,45 +154,41 @@ function LinkList({ location, match, history }) {
     })
   }
 
+  const { loading, error, data, subscribeToMore } = useQuery(FEED_QUERY, { variables: getQueryVariables() })
+
+  if (loading) return <div>Fetching</div>
+  if (error) return <div>Error</div>
+
+  subscribeToNewLinks(subscribeToMore)
+  subscribeToNewVotes(subscribeToMore)
+
+  const linksToRender = getLinksToRender(data)
+  const isNewPage = location.pathname.includes('new')
+  const pageIndex = match.params.page
+    ? (match.params.page - 1) * LINKS_PER_PAGE
+    : 0
+
   return (
-    <Query query={FEED_QUERY} variables={getQueryVariables()}>
-      {({ loading, error, data, subscribeToMore }) => {
-        if (loading) return <div>Fetching</div>
-        if (error) return <div>Error</div>
-
-        subscribeToNewLinks(subscribeToMore)
-        subscribeToNewVotes(subscribeToMore)
-
-        const linksToRender = getLinksToRender(data)
-        const isNewPage = location.pathname.includes('new')
-        const pageIndex = match.params.page
-          ? (match.params.page - 1) * LINKS_PER_PAGE
-          : 0
-
-        return (
-          <Fragment>
-            {linksToRender.map((link, index) => (
-              <Link
-                key={link.id}
-                link={link}
-                index={index + pageIndex}
-                updateStoreAfterVote={updateCacheAfterVote}
-              />
-            ))}
-            {isNewPage && (
-              <div className="flex ml4 mv3 gray">
-                <div className="pointer mr2" onClick={previousPage}>
-                  Previous
-                </div>
-                <div className="pointer" onClick={() => nextPage(data)}>
-                  Next
-                </div>
-              </div>
-            )}
-          </Fragment>
-        )
-      }}
-    </Query>
+    <Fragment>
+      {linksToRender.map((link, index) => (
+        <Link
+          key={link.id}
+          link={link}
+          index={index + pageIndex}
+          updateStoreAfterVote={updateCacheAfterVote}
+        />
+      ))}
+      {isNewPage && (
+        <div className="flex ml4 mv3 gray">
+          <div className="pointer mr2" onClick={previousPage}>
+            Previous
+          </div>
+          <div className="pointer" onClick={() => nextPage(data)}>
+            Next
+          </div>
+        </div>
+      )}
+    </Fragment>
   )
 }
 
