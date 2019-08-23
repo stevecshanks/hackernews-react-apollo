@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { AUTH_TOKEN } from '../constants'
 import gql from 'graphql-tag'
-import { Mutation } from 'react-apollo';
+import { useMutation } from '@apollo/react-hooks';
 
 const SIGNUP_MUTATION = gql`
   mutation SignupMutation($email: String!, $password: String!, $name: String!) {
@@ -26,11 +26,20 @@ function Login({ history }) {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
 
+  const [login] = useMutation(LOGIN_MUTATION)
+  const [signup] = useMutation(SIGNUP_MUTATION)
+
   const saveUserData = token => {
     localStorage.setItem(AUTH_TOKEN, token)
   }
 
-  const confirm = async data => {
+  const buttonOnClick = async () => {
+    const mutation = isLogin ? login : signup
+
+    const { data } = await mutation({
+      variables: { email, password, name },
+    })
+
     const { token } = isLogin ? data.login : data.signup
     saveUserData(token)
     history.push(`/`)
@@ -62,17 +71,9 @@ function Login({ history }) {
         />
       </div>
       <div className="flex mt3">
-          <Mutation
-              mutation={isLogin ? LOGIN_MUTATION : SIGNUP_MUTATION}
-              variables={{ email, password, name }}
-              onCompleted={data => confirm(data)}
-          >
-              {mutation => (
-              <div className="pointer mr2 button" onClick={mutation}>
-                  {isLogin ? 'login' : 'create account'}
-              </div>
-              )}
-          </Mutation>
+          <div className="pointer mr2 button" onClick={buttonOnClick}>
+              {isLogin ? 'login' : 'create account'}
+          </div>
           <div
               className="pointer button"
               onClick={() => setIsLogin(!isLogin)}
