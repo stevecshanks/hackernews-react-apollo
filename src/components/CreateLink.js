@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
-import { useMutation } from '@apollo/react-hooks'
-import gql from 'graphql-tag'
-import { FEED_QUERY } from './LinkList'
-import { LINKS_PER_PAGE } from '../constants';
+import React, { useState } from "react";
+import { useMutation } from "@apollo/react-hooks";
+import gql from "graphql-tag";
+import { FEED_QUERY } from "./LinkList";
+import { LINKS_PER_PAGE } from "../constants";
 
 const POST_MUTATION = gql`
   mutation PostMutation($description: String!, $url: String!) {
@@ -13,36 +13,36 @@ const POST_MUTATION = gql`
       description
     }
   }
-`
+`;
 
 function CreateLink({ history }) {
-  const [description, setDescription] = useState('')
-  const [url, setUrl] = useState('')
+  const [description, setDescription] = useState("");
+  const [url, setUrl] = useState("");
 
-  const [postMutation] = useMutation(POST_MUTATION)
+  const [postMutation] = useMutation(POST_MUTATION);
 
   const createLink = async () => {
     await postMutation({
       variables: { description, url },
       update: (store, { data: { post } }) => {
-        const first = LINKS_PER_PAGE
-        const skip = 0
-        const orderBy = 'createdAt_DESC'
+        const first = LINKS_PER_PAGE;
+        const skip = 0;
+        const orderBy = "createdAt_DESC";
         const data = store.readQuery({
           query: FEED_QUERY,
-          variables: { first, skip, orderBy }
-        })
-        data.feed.links.unshift(post)
+          variables: { first, skip, orderBy },
+        });
+        data.feed.links.unshift(post);
         store.writeQuery({
           query: FEED_QUERY,
           data,
-          variables: { first, skip, orderBy }
-        })
+          variables: { first, skip, orderBy },
+        });
       },
-    })
+    });
 
-    history.push('/new/1')
-  }
+    history.push("/new/1");
+  };
 
   return (
     <div>
@@ -64,7 +64,7 @@ function CreateLink({ history }) {
       </div>
       <button onClick={createLink}>Submit</button>
     </div>
-  )
+  );
 }
 
-export default CreateLink
+export default CreateLink;

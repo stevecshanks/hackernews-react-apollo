@@ -1,8 +1,8 @@
-import React, { Fragment } from 'react'
-import Link from './Link'
-import gql from 'graphql-tag'
-import { LINKS_PER_PAGE } from '../constants';
-import { useQuery } from '@apollo/react-hooks';
+import React, { Fragment } from "react";
+import Link from "./Link";
+import gql from "graphql-tag";
+import { LINKS_PER_PAGE } from "../constants";
+import { useQuery } from "@apollo/react-hooks";
 
 export const FEED_QUERY = gql`
   query FeedQuery($first: Int, $skip: Int, $orderBy: LinkOrderByInput) {
@@ -26,7 +26,7 @@ export const FEED_QUERY = gql`
       count
     }
   }
-`
+`;
 
 const NEW_LINKS_SUBSCRIPTION = gql`
   subscription {
@@ -47,7 +47,7 @@ const NEW_LINKS_SUBSCRIPTION = gql`
       }
     }
   }
-`
+`;
 
 const NEW_VOTES_SUBSCRIPTION = gql`
   subscription {
@@ -74,99 +74,106 @@ const NEW_VOTES_SUBSCRIPTION = gql`
       }
     }
   }
-`
+`;
 function LinkList({ location, match, history }) {
   const getQueryVariables = () => {
-    const isNewPage = location.pathname.includes('new')
-    const page = parseInt(match.params.page, 10)
-  
-    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0
-    const first = isNewPage ? LINKS_PER_PAGE : 100
-    const orderBy = isNewPage ? 'createdAt_DESC' : null
-    return { first, skip, orderBy }
-  }
+    const isNewPage = location.pathname.includes("new");
+    const page = parseInt(match.params.page, 10);
+
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+    const first = isNewPage ? LINKS_PER_PAGE : 100;
+    const orderBy = isNewPage ? "createdAt_DESC" : null;
+    return { first, skip, orderBy };
+  };
 
   const getLinksToRender = data => {
-    const isNewPage = location.pathname.includes('new')
+    const isNewPage = location.pathname.includes("new");
     if (isNewPage) {
-      return data.feed.links
+      return data.feed.links;
     }
-    const rankedLinks = data.feed.links.slice()
-    rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length)
-    return rankedLinks
-  }
+    const rankedLinks = data.feed.links.slice();
+    rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length);
+    return rankedLinks;
+  };
 
   const nextPage = data => {
-    const page = parseInt(match.params.page, 10)
+    const page = parseInt(match.params.page, 10);
     if (page <= data.feed.count / LINKS_PER_PAGE) {
-      const nextPage = page + 1
-      history.push(`/new/${nextPage}`)
+      const nextPage = page + 1;
+      history.push(`/new/${nextPage}`);
     }
-  }
-  
+  };
+
   const previousPage = () => {
-    const page = parseInt(match.params.page, 10)
+    const page = parseInt(match.params.page, 10);
     if (page > 1) {
-      const previousPage = page - 1
-      history.push(`/new/${previousPage}`)
+      const previousPage = page - 1;
+      history.push(`/new/${previousPage}`);
     }
-  }
+  };
 
   const updateCacheAfterVote = (store, createVote, linkId) => {
-    const isNewPage = location.pathname.includes('new')
-    const page = parseInt(match.params.page, 10)
-  
-    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0
-    const first = isNewPage ? LINKS_PER_PAGE : 100
-    const orderBy = isNewPage ? 'createdAt_DESC' : null
-    const { feed: { links } } = store.readQuery({
+    const isNewPage = location.pathname.includes("new");
+    const page = parseInt(match.params.page, 10);
+
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+    const first = isNewPage ? LINKS_PER_PAGE : 100;
+    const orderBy = isNewPage ? "createdAt_DESC" : null;
+    const {
+      feed: { links },
+    } = store.readQuery({
       query: FEED_QUERY,
-      variables: { first, skip, orderBy }
-    })
-  
-    const otherLinks = links.filter(link => link.id !== linkId)
-    store.writeQuery({ query: FEED_QUERY, data: { feed: { links: [...otherLinks, createVote.link] } } })
-  }
+      variables: { first, skip, orderBy },
+    });
+
+    const otherLinks = links.filter(link => link.id !== linkId);
+    store.writeQuery({
+      query: FEED_QUERY,
+      data: { feed: { links: [...otherLinks, createVote.link] } },
+    });
+  };
 
   const subscribeToNewLinks = subscribeToMore => {
     subscribeToMore({
       document: NEW_LINKS_SUBSCRIPTION,
       updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev
-        const newLink = subscriptionData.data.newLink
+        if (!subscriptionData.data) return prev;
+        const newLink = subscriptionData.data.newLink;
         const exists = prev.feed.links.find(({ id }) => id === newLink.id);
         if (exists) return prev;
-  
+
         return Object.assign({}, prev, {
           feed: {
             links: [newLink, ...prev.feed.links],
             count: prev.feed.links.length + 1,
-            __typename: prev.feed.__typename
-          }
-        })
-      }
-    })
-  }
+            __typename: prev.feed.__typename,
+          },
+        });
+      },
+    });
+  };
 
   const subscribeToNewVotes = subscribeToMore => {
     subscribeToMore({
-      document: NEW_VOTES_SUBSCRIPTION
-    })
-  }
+      document: NEW_VOTES_SUBSCRIPTION,
+    });
+  };
 
-  const { loading, error, data, subscribeToMore } = useQuery(FEED_QUERY, { variables: getQueryVariables() })
+  const { loading, error, data, subscribeToMore } = useQuery(FEED_QUERY, {
+    variables: getQueryVariables(),
+  });
 
-  if (loading) return <div>Fetching</div>
-  if (error) return <div>Error</div>
+  if (loading) return <div>Fetching</div>;
+  if (error) return <div>Error</div>;
 
-  subscribeToNewLinks(subscribeToMore)
-  subscribeToNewVotes(subscribeToMore)
+  subscribeToNewLinks(subscribeToMore);
+  subscribeToNewVotes(subscribeToMore);
 
-  const linksToRender = getLinksToRender(data)
-  const isNewPage = location.pathname.includes('new')
+  const linksToRender = getLinksToRender(data);
+  const isNewPage = location.pathname.includes("new");
   const pageIndex = match.params.page
     ? (match.params.page - 1) * LINKS_PER_PAGE
-    : 0
+    : 0;
 
   return (
     <Fragment>
@@ -189,7 +196,7 @@ function LinkList({ location, match, history }) {
         </div>
       )}
     </Fragment>
-  )
+  );
 }
 
-export default LinkList
+export default LinkList;

@@ -1,10 +1,10 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { withRouter } from 'react-router'
-import { AUTH_TOKEN } from '../constants'
+import React from "react";
+import { Link } from "react-router-dom";
+import { withRouter } from "react-router";
+import { AUTH_TOKEN } from "../constants";
 
 function Header({ history }) {
-  const authToken = localStorage.getItem(AUTH_TOKEN)
+  const authToken = localStorage.getItem(AUTH_TOKEN);
 
   return (
     <div className="flex pa1 justify-between nowrap orange">
@@ -35,8 +35,8 @@ function Header({ history }) {
           <div
             className="ml1 pointer black"
             onClick={() => {
-              localStorage.removeItem(AUTH_TOKEN)
-              history.push(`/`)
+              localStorage.removeItem(AUTH_TOKEN);
+              history.push(`/`);
             }}
           >
             logout
@@ -48,7 +48,7 @@ function Header({ history }) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default withRouter(Header)
+export default withRouter(Header);
