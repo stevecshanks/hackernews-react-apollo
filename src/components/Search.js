@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { withApollo } from 'react-apollo'
 import gql from 'graphql-tag'
 import Link from './Link'
+import { useLazyQuery } from '@apollo/react-hooks';
 
 const FEED_SEARCH_QUERY = gql`
   query FeedSearchQuery($filter: String!) {
@@ -26,17 +26,18 @@ const FEED_SEARCH_QUERY = gql`
   }
 `
 
-function Search({ client }) {
+function Search() {
   const [filter, setFilter] = useState('')
-  const [links, setLinks] = useState([])
+  const [queryFilter, setQueryFilter] = useState('')
 
-  const executeSearch = async () => {
-    const result = await client.query({
-      query: FEED_SEARCH_QUERY,
-      variables: { filter },
-    })
-    setLinks(result.data.feed.links)
+  const updateSearchResults = () => {
+    setQueryFilter(filter)
+    executeSearch()
   }
+
+  const [executeSearch, { data, loading }] = useLazyQuery(FEED_SEARCH_QUERY, { variables: { filter: queryFilter } })
+
+  const links = data && !loading ? data.feed.links : []
 
   return (
     <div>
@@ -46,7 +47,7 @@ function Search({ client }) {
           type='text'
           onChange={e => setFilter(e.target.value)}
         />
-        <button onClick={() => executeSearch()}>OK</button>
+        <button onClick={() => updateSearchResults()}>OK</button>
       </div>
       {links.map((link, index) => (
         <Link key={link.id} link={link} index={index} />
@@ -55,4 +56,4 @@ function Search({ client }) {
   )
 }
 
-export default withApollo(Search)
+export default Search
